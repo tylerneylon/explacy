@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 from collections import defaultdict
 
 from pprint import pprint
@@ -118,7 +119,7 @@ def f2(nlp):
                 num_deps += 1
                 print '%d is over %d' % (i, j)
                 arrow['underset'].add(j)
-        arrow['num_deps'] = num_deps
+        arrow['num_deps_left'] = arrow['num_deps'] = num_deps
         arrows_with_deps[num_deps].add(i)
 
     print ''
@@ -141,8 +142,17 @@ def f2(nlp):
         arrow = arrows[arrow_index]
         src, dst = arrow['from'].i, arrow['to'].i  # TODO Consistentize names.
 
-        # Check the height needed for the arrowhead.
-        height = max(arrow['num_deps'], len(lines[dst])) + 3
+        print ''
+        print 'Rendering arrow %d from %s to %s' % (arrow_index, arrow['from'], arrow['to'])
+
+        # Check the height needed.
+        height = 3
+        if arrow['underset']:
+            height = max(arrows[i]['height'] for i in arrow['underset']) + 1
+        height = max(height, 3, len(lines[dst]) + 3)
+        arrow['height'] = height
+
+        print '  height = %d' % height
 
         # Draw the outgoing src line.
         while len(lines[src]) < height:
@@ -164,16 +174,17 @@ def f2(nlp):
         # Update arrows_with_deps.
         for arr_i, arr in enumerate(arrows):
             if arrow_index in arr['underset']:
-                arrows_with_deps[arr['num_deps']].remove(arr_i)
-                arr['num_deps'] -= 1
-                arrows_with_deps[arr['num_deps']].add(arr_i)
+                arrows_with_deps[arr['num_deps_left']].remove(arr_i)
+                arr['num_deps_left'] -= 1
+                arrows_with_deps[arr['num_deps_left']].add(arr_i)
 
         num_arrows_left -= 1
 
         # XXX
-        print ''
-        print 'After processing arrow %d, arrows_with_deps is:' % arrow_index
-        pprint(arrows_with_deps)
+        if False:
+            print ''
+            print 'After processing arrow %d, arrows_with_deps is:' % arrow_index
+            pprint(arrows_with_deps)
 
     # Convert the character lists into strings.
     max_len = max(len(line) for line in lines)
