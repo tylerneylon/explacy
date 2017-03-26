@@ -154,22 +154,26 @@ def f2(nlp):
 
         print '  height = %d' % height
 
+        goes_up = src > dst
+
         # Draw the outgoing src line.
+        if lines[src]:
+            lines[src][-1].add('w')
         while len(lines[src]) < height:
-            lines[src].append('-')
-        lines[src][-1] = '+'
+            lines[src].append(set(['e', 'w']))
+        lines[src][-1] = set(['e', 'n']) if goes_up else set(['e', 's'])
 
         # Draw the incoming dst line.
-        lines[dst].append('>')
+        lines[dst].append(u'►')
         while len(lines[dst]) < height:
-            lines[dst].append('-')
-        lines[dst][-1] = '+'
+            lines[dst].append(set(['e', 'w']))
+        lines[dst][-1] = set(['e', 's']) if goes_up else set(['e', 'n'])
 
         # Draw the adjoining vertical line.
         for i in range(min(src, dst) + 1, max(src, dst)):
             while len(lines[i]) < height - 1:
                 lines[i].append(' ')
-            lines[i].append('|')
+            lines[i].append(set(['n', 's']))
 
         # Update arrows_with_deps.
         for arr_i, arr in enumerate(arrows):
@@ -181,14 +185,31 @@ def f2(nlp):
         num_arrows_left -= 1
 
         # XXX
+        # num_arrows_left = 0
+
+        # XXX
         if False:
             print ''
             print 'After processing arrow %d, arrows_with_deps is:' % arrow_index
             pprint(arrows_with_deps)
 
+    arr_chars = {'ew': u'─',
+                 'ns': u'│',
+                 'en': u'└',
+                 'es': u'┌',
+                 'enw': u'┴',
+                 'esw': u'┬'}
+
+    # XXX
+    print ''
+    print 'Before conversion, lines:'
+    pprint(lines)
+
     # Convert the character lists into strings.
     max_len = max(len(line) for line in lines)
     for i in range(len(lines)):
+        lines[i] = [arr_chars[''.join(sorted(ch))] if type(ch) is set else ch
+                    for ch in lines[i]]
         lines[i] = ''.join(reversed(lines[i]))
         lines[i] = ' ' * (max_len - len(lines[i])) + lines[i]
 
