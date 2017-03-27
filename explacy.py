@@ -6,16 +6,25 @@ from pprint import pprint
 
 do_print_debug_info = False
 
+def print_table(rows):
+    col_widths = [max(len(s) for s in col) for col in zip(*rows)]
+    fmt = ' '.join('%%-%ds' % width for width in col_widths)
+    rows.insert(1, [u'─' * width for width in col_widths])
+    for row in rows:
+        print fmt % tuple(row)
+
 def start_end(arrow):
     start, end = arrow['from'].i, arrow['to'].i
     mn = min(start, end)
     mx = max(start, end)
     return start, end, mn, mx
 
-def print_parse_info(nlp):
+def print_parse_info(nlp, sent):
+
+    assert type(sent) is unicode
 
     # Parse our sentence.
-    doc = nlp(u'The dog ate the delicious pizza.')
+    doc = nlp(sent)
 
     # Build a list of arrow heights (distance from tokens) per token.
     heights = [[] for token in doc]
@@ -124,7 +133,8 @@ def print_parse_info(nlp):
         lines[i] = ''.join(reversed(lines[i]))
         lines[i] = ' ' * (max_len - len(lines[i])) + lines[i]
 
-    # Print stuff out.
-    print ''
-    for i in range(len(doc)):
-        print '%s %s' % (lines[i], doc[i])
+    # Compile full table to print out.
+    rows = [['Dep tree', 'Token', 'Dep type', 'Lemma', 'Part of Sp']]
+    for i, token in enumerate(doc):
+        rows.append([lines[i], token, token.dep_, token.lemma_, token.pos_])
+    print_table(rows)
