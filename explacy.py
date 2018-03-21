@@ -3,29 +3,66 @@
 # Box-drawing characters are the thin variants, and can be found here:
 # https://en.wikipedia.org/wiki/Box-drawing_character
 #
+""" explacy.py
+
+    This module uses unicode box-drawing characters to draw the spacy-derived
+    dependency tree of whichever (unicode) string you provide as input.
+
+    Usage:
+
+        import explacy
+        import spacy
+
+        nlp = spacy.load('en')
+
+        explacy.print_parse_info(nlp, 'The salad was surprisingly tasty.')
+
+        # Use a unicode string as input (eg u'The dog jumped.') in Python 2.
+
+    Example tree rendering:
+
+        Dep tree Token        Dep type Lemma        Part of Sp
+        ──────── ──────────── ──────── ──────────── ──────────
+            ┌─►  The          det      the          DET
+         ┌─►└──  salad        nsubj    salad        NOUN
+        ┌┼─────  was          ROOT     be           VERB
+        ││  ┌─►  surprisingly advmod   surprisingly ADV
+        │└─►└──  tasty        acomp    tasty        ADJ
+        └─────►  .            punct    .            PUNCT
+"""
 
 import sys
 from collections import defaultdict
 
 from pprint import pprint
 
-do_print_debug_info = False
+_do_print_debug_info = False
 
-def print_table(rows):
+def _print_table(rows):
     col_widths = [max(len(s) for s in col) for col in zip(*rows)]
     fmt = ' '.join('%%-%ds' % width for width in col_widths)
     rows.insert(1, ['─' * width for width in col_widths])
     for row in rows:
+        # Uncomment this version to see code points printed out (for debugging).
         # print(list(map(hex, map(ord, list(fmt % tuple(row))))))
         print(fmt % tuple(row))
 
-def start_end(arrow):
+def _start_end(arrow):
     start, end = arrow['from'].i, arrow['to'].i
     mn = min(start, end)
     mx = max(start, end)
     return start, end, mn, mx
 
 def print_parse_info(nlp, sent):
+    """ Print the dependency tree of `sent` (sentence), along with the lemmas
+        (de-inflected forms) and parts-of-speech of the words.
+
+        The input `sent` is expected to be a unicode string (of type unicode in
+        Python 2; of type str in Python 3). The input `nlp` (for natural
+        language parser) is expected to be the return value from a call to
+        spacy.load(), in other words, it's the callable instance of a spacy
+        language model.
+    """
 
     unicode_type = unicode if sys.version_info[0] < 3 else str
     assert type(sent) is unicode_type
@@ -46,24 +83,24 @@ def print_parse_info(nlp, sent):
     # Set the base height; these may increase to allow room for arrowheads after this.
     arrows_with_deps = defaultdict(set)
     for i, arrow in enumerate(arrows):
-        if do_print_debug_info:
+        if _do_print_debug_info:
             print('Arrow %d: "%s" -> "%s"' % (i, arrow['from'], arrow['to']))
         num_deps = 0
-        start, end, mn, mx = start_end(arrow)
+        start, end, mn, mx = _start_end(arrow)
         for j, other in enumerate(arrows):
             if arrow is other:
                 continue
-            o_start, o_end, o_mn, o_mx = start_end(other)
+            o_start, o_end, o_mn, o_mx = _start_end(other)
             if ((start == o_start and mn <= o_end <= mx) or
                 (start != o_start and mn <= o_start <= mx)):
                 num_deps += 1
-                if do_print_debug_info:
+                if _do_print_debug_info:
                     print('%d is over %d' % (i, j))
                 arrow['underset'].add(j)
         arrow['num_deps_left'] = arrow['num_deps'] = num_deps
         arrows_with_deps[num_deps].add(i)
 
-    if do_print_debug_info:
+    if _do_print_debug_info:
         print('')
         print('arrows:')
         pprint(arrows)
@@ -82,7 +119,7 @@ def print_parse_info(nlp, sent):
 
         arrow_index = arrows_with_deps[0].pop()
         arrow = arrows[arrow_index]
-        src, dst, mn, mx = start_end(arrow)
+        src, dst, mn, mx = _start_end(arrow)
 
         # Check the height needed.
         height = 3
@@ -91,7 +128,7 @@ def print_parse_info(nlp, sent):
         height = max(height, 3, len(lines[dst]) + 3)
         arrow['height'] = height
 
-        if do_print_debug_info:
+        if _do_print_debug_info:
             print('')
             print('Rendering arrow %d: "%s" -> "%s"' % (arrow_index,
                                                         arrow['from'],
@@ -150,4 +187,4 @@ def print_parse_info(nlp, sent):
     rows = [['Dep tree', 'Token', 'Dep type', 'Lemma', 'Part of Sp']]
     for i, token in enumerate(doc):
         rows.append([lines[i], token, token.dep_, token.lemma_, token.pos_])
-    print_table(rows)
+    _print_table(rows)
