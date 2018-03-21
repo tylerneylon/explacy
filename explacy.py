@@ -4,6 +4,7 @@
 # https://en.wikipedia.org/wiki/Box-drawing_character
 #
 
+import sys
 from collections import defaultdict
 
 from pprint import pprint
@@ -26,7 +27,8 @@ def start_end(arrow):
 
 def print_parse_info(nlp, sent):
 
-    assert type(sent) is str
+    unicode_type = unicode if sys.version_info[0] < 3 else str
+    assert type(sent) is unicode_type
 
     # Parse our sentence.
     doc = nlp(sent)
@@ -108,7 +110,7 @@ def print_parse_info(nlp, sent):
         lines[src][height - 1].add('n' if goes_up else 's')
 
         # Draw the incoming dst line.
-        lines[dst].append('►')
+        lines[dst].append(u'►')
         while len(lines[dst]) < height:
             lines[dst].append(set(['e', 'w']))
         lines[dst][-1] = set(['e', 's']) if goes_up else set(['e', 'n'])
@@ -128,13 +130,13 @@ def print_parse_info(nlp, sent):
 
         num_arrows_left -= 1
 
-    arr_chars = {'ew'  : '─',
-                 'ns'  : '│',
-                 'en'  : '└',
-                 'es'  : '┌',
-                 'enw' : '┴',
-                 'ensw': '┼',
-                 'esw' : '┬'}
+    arr_chars = {'ew'  : u'─',
+                 'ns'  : u'│',
+                 'en'  : u'└',
+                 'es'  : u'┌',
+                 'enw' : u'┴',
+                 'ensw': u'┼',
+                 'esw' : u'┬'}
 
     # Convert the character lists into strings.
     max_len = max(len(line) for line in lines)
