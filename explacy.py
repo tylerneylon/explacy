@@ -101,7 +101,7 @@ def print_parse_info(nlp, sent):
         goes_up = src > dst
 
         # Draw the outgoing src line.
-        if lines[src]:
+        if lines[src] and len(lines[src]) < height:
             lines[src][-1].add('w')
         while len(lines[src]) < height - 1:
             lines[src].append(set(['e', 'w']))
