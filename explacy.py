@@ -1,4 +1,8 @@
 # -*- coding: utf-8 -*-
+#
+# Box-drawing characters are the thin variants, and can be found here:
+# https://en.wikipedia.org/wiki/Box-drawing_character
+#
 
 from collections import defaultdict
 
@@ -9,9 +13,10 @@ do_print_debug_info = False
 def print_table(rows):
     col_widths = [max(len(s) for s in col) for col in zip(*rows)]
     fmt = ' '.join('%%-%ds' % width for width in col_widths)
-    rows.insert(1, [u'─' * width for width in col_widths])
+    rows.insert(1, ['─' * width for width in col_widths])
     for row in rows:
-        print fmt % tuple(row)
+        # print(list(map(hex, map(ord, list(fmt % tuple(row))))))
+        print(fmt % tuple(row))
 
 def start_end(arrow):
     start, end = arrow['from'].i, arrow['to'].i
@@ -21,7 +26,7 @@ def start_end(arrow):
 
 def print_parse_info(nlp, sent):
 
-    assert type(sent) is unicode
+    assert type(sent) is str
 
     # Parse our sentence.
     doc = nlp(sent)
@@ -39,6 +44,8 @@ def print_parse_info(nlp, sent):
     # Set the base height; these may increase to allow room for arrowheads after this.
     arrows_with_deps = defaultdict(set)
     for i, arrow in enumerate(arrows):
+        if do_print_debug_info:
+            print('Arrow %d: "%s" -> "%s"' % (i, arrow['from'], arrow['to']))
         num_deps = 0
         start, end, mn, mx = start_end(arrow)
         for j, other in enumerate(arrows):
@@ -49,18 +56,18 @@ def print_parse_info(nlp, sent):
                 (start != o_start and mn <= o_start <= mx)):
                 num_deps += 1
                 if do_print_debug_info:
-                    print '%d is over %d' % (i, j)
+                    print('%d is over %d' % (i, j))
                 arrow['underset'].add(j)
         arrow['num_deps_left'] = arrow['num_deps'] = num_deps
         arrows_with_deps[num_deps].add(i)
 
     if do_print_debug_info:
-        print ''
-        print 'arrows:'
+        print('')
+        print('arrows:')
         pprint(arrows)
 
-        print ''
-        print 'arrows_with_deps:'
+        print('')
+        print('arrows_with_deps:')
         pprint(arrows_with_deps)
 
     # Render the arrows in characters. Some heights will be raised to make room for arrowheads.
@@ -73,8 +80,7 @@ def print_parse_info(nlp, sent):
 
         arrow_index = arrows_with_deps[0].pop()
         arrow = arrows[arrow_index]
-        src, dst = arrow['from'].i, arrow['to'].i  # TODO Consistentize names.
-
+        src, dst, mn, mx = start_end(arrow)
 
         # Check the height needed.
         height = 3
@@ -84,27 +90,31 @@ def print_parse_info(nlp, sent):
         arrow['height'] = height
 
         if do_print_debug_info:
-            print ''
-            print 'Rendering arrow %d from %s to %s' % (arrow_index, arrow['from'], arrow['to'])
-            print '  height = %d' % height
+            print('')
+            print('Rendering arrow %d: "%s" -> "%s"' % (arrow_index,
+                                                        arrow['from'],
+                                                        arrow['to']))
+            print('  height = %d' % height)
 
         goes_up = src > dst
 
         # Draw the outgoing src line.
         if lines[src]:
             lines[src][-1].add('w')
-        while len(lines[src]) < height:
+        while len(lines[src]) < height - 1:
             lines[src].append(set(['e', 'w']))
-        lines[src][-1] = set(['e', 'n']) if goes_up else set(['e', 's'])
+        if len(lines[src]) < height:
+            lines[src].append({'e'})
+        lines[src][height - 1].add('n' if goes_up else 's')
 
         # Draw the incoming dst line.
-        lines[dst].append(u'►')
+        lines[dst].append('►')
         while len(lines[dst]) < height:
             lines[dst].append(set(['e', 'w']))
         lines[dst][-1] = set(['e', 's']) if goes_up else set(['e', 'n'])
 
         # Draw the adjoining vertical line.
-        for i in range(min(src, dst) + 1, max(src, dst)):
+        for i in range(mn + 1, mx):
             while len(lines[i]) < height - 1:
                 lines[i].append(' ')
             lines[i].append(set(['n', 's']))
@@ -118,12 +128,13 @@ def print_parse_info(nlp, sent):
 
         num_arrows_left -= 1
 
-    arr_chars = {'ew': u'─',
-                 'ns': u'│',
-                 'en': u'└',
-                 'es': u'┌',
-                 'enw': u'┴',
-                 'esw': u'┬'}
+    arr_chars = {'ew'  : '─',
+                 'ns'  : '│',
+                 'en'  : '└',
+                 'es'  : '┌',
+                 'enw' : '┴',
+                 'ensw': '┼',
+                 'esw' : '┬'}
 
     # Convert the character lists into strings.
     max_len = max(len(line) for line in lines)
