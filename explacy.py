@@ -171,6 +171,7 @@ def print_parse_info(nlp, sent):
                  'ns'  : u'│',
                  'en'  : u'└',
                  'es'  : u'┌',
+                 'ens' : u'├',
                  'enw' : u'┴',
                  'ensw': u'┼',
                  'esw' : u'┬'}
