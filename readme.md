@@ -23,3 +23,13 @@ If you use `pip` to install Python libraries, then your
 
 If you use Anaconda, it will be different; see the [spacy
 docs](https://spacy.io/usage/).
+
+## "License," or "This is as free as I can make it"
+
+This project is in the public domain.
+
+To the extent possible under law, the author (Tyler Neylon) has waived
+all copyright and related neighboring rights to explacy. This work
+is published from: The United States.
+
+See also the `UNLICENSE` file.
